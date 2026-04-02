@@ -1,2 +1,3 @@
 streamlit
 markdown
+pymdown-extensions
