@@ -1,47 +1,65 @@
 import streamlit as st
-import re
+import hashlib
+import os
 
-st.set_page_config(page_title="Markdown Viewer", layout="wide")
+REPORT_DIR = "reports"
 
-st.title("Markdown Report Viewer")
+os.makedirs(REPORT_DIR, exist_ok=True)
 
-uploaded_files = st.file_uploader(
-    "Upload Markdown files",
-    type=["md"],
-    accept_multiple_files=True
-)
+st.set_page_config(layout="wide")
 
-def linkify(text):
-    """
-    Trasforma URL plain text in link cliccabili
-    """
-    url_pattern = r'(https?://[^\s|]+)'
-    return re.sub(url_pattern, r'[\1](\1)', text)
+st.title("Markdown SEO Report Viewer")
 
+# ---------- funzione hash ----------
+def generate_hash(content):
+    return hashlib.md5(content.encode()).hexdigest()
 
-if uploaded_files:
+# ---------- controlla query param ----------
+query_params = st.query_params
+report_id = query_params.get("report")
 
-    file_names = [f.name for f in uploaded_files]
+# ---------- se il report arriva da URL ----------
+if report_id:
 
-    selected_file = st.sidebar.selectbox(
-        "Select page",
-        file_names
-    )
+    file_path = os.path.join(REPORT_DIR, f"{report_id}.md")
 
-    for file in uploaded_files:
+    if os.path.exists(file_path):
 
-        if file.name == selected_file:
+        with open(file_path, "r") as f:
+            md_content = f.read()
 
-            md_content = file.read().decode("utf-8")
+        st.markdown(md_content)
 
-            # rende gli URL cliccabili
-            md_content = linkify(md_content)
+    else:
+        st.error("Report non trovato.")
 
-            st.markdown(
-                md_content,
-                unsafe_allow_html=True
-            )
-
+# ---------- upload nuovo report ----------
 else:
 
-    st.info("Upload a Markdown file to preview it.")
+    uploaded_file = st.file_uploader(
+        "Carica un report Markdown",
+        type=["md"]
+    )
+
+    if uploaded_file:
+
+        md_content = uploaded_file.read().decode("utf-8")
+
+        report_hash = generate_hash(md_content)
+
+        file_path = os.path.join(REPORT_DIR, f"{report_hash}.md")
+
+        if not os.path.exists(file_path):
+            with open(file_path, "w") as f:
+                f.write(md_content)
+
+        share_url = f"?report={report_hash}"
+
+        st.success("Report caricato")
+
+        st.markdown("### 🔗 Link condivisibile")
+        st.code(share_url)
+
+        st.markdown("---")
+
+        st.markdown(md_content)
