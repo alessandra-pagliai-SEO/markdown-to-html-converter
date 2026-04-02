@@ -3,22 +3,22 @@ import hashlib
 import os
 
 REPORT_DIR = "reports"
-
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 st.set_page_config(layout="wide")
 
 st.title("Markdown SEO Report Viewer")
 
-# ---------- funzione hash ----------
 def generate_hash(content):
     return hashlib.md5(content.encode()).hexdigest()
 
-# ---------- controlla query param ----------
 query_params = st.query_params
 report_id = query_params.get("report")
 
-# ---------- se il report arriva da URL ----------
+# -------------------------------
+# CARICAMENTO REPORT DA LINK
+# -------------------------------
+
 if report_id:
 
     file_path = os.path.join(REPORT_DIR, f"{report_id}.md")
@@ -33,7 +33,10 @@ if report_id:
     else:
         st.error("Report non trovato.")
 
-# ---------- upload nuovo report ----------
+# -------------------------------
+# UPLOAD NUOVO REPORT
+# -------------------------------
+
 else:
 
     uploaded_file = st.file_uploader(
@@ -53,12 +56,23 @@ else:
             with open(file_path, "w") as f:
                 f.write(md_content)
 
-        share_url = f"?report={report_hash}"
+        base_url = st.context.url
+        share_url = f"{base_url}?report={report_hash}"
 
         st.success("Report caricato")
 
-        st.markdown("### 🔗 Link condivisibile")
-        st.code(share_url)
+        st.subheader("Link condivisibile")
+
+        col1, col2 = st.columns([3,1])
+
+        with col1:
+            st.code(share_url)
+
+        with col2:
+            st.link_button(
+                "Apri report",
+                share_url
+            )
 
         st.markdown("---")
 
